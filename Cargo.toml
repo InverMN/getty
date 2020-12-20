@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 rocket = "0.4.6"
+aerospike = "1.0.0"
