@@ -10,9 +10,9 @@ use aerospike::{Client, ClientPolicy};
 
 static mut DATABASE_CLIENT: Option<Arc<aerospike::Client>> = None;
 
-#[get("/")]
-fn index() -> &'static str {
-  "Welcome to Get JWT auth server"
+fn main() {
+  connect_database();
+  rocket::ignite().mount("/", routes![index]).launch();
 }
 
 fn try_connecting_database_once() {
@@ -39,7 +39,7 @@ fn connect_database() {
   println!("Connected to database")
 }
 
-fn main() {
-  connect_database();
-  rocket::ignite().mount("/", routes![index]).launch();
+#[get("/")]
+fn index() -> &'static str {
+  "Welcome to Get JWT auth server"
 }
