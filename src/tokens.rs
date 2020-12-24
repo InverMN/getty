@@ -1,6 +1,9 @@
+use crate::config;
+
 use serde::{Deserialize, Serialize};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use std::time::{SystemTime, UNIX_EPOCH};
+use config::Config;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -8,7 +11,7 @@ struct Claims {
   user_id: String,
 }
 
-fn sign_token(user_id: &str, expiration_time: u128) -> String {
+fn sign_token(user_id: &str, expiration_time: u128, config: &Config) -> String {
   let start = SystemTime::now()
     .duration_since(UNIX_EPOCH)
     .unwrap();
@@ -20,20 +23,20 @@ fn sign_token(user_id: &str, expiration_time: u128) -> String {
     user_id: user_id.to_string(),
   };
 
-  let token = encode(&Header::default(), &claims, &EncodingKey::from_secret("my_secretly_secreted_secret".as_ref())).unwrap();
+  let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(config.secret.as_ref())).unwrap();
 
   token
 }
 
-pub fn sign_refresh_token(user_id: &str) -> String {
-  sign_token(user_id, 10 * 24 * 60 * 60 * 1000)
+pub fn sign_refresh_token(user_id: &str, config: &Config) -> String {
+  sign_token(user_id, config.refresh_token_exp, config)
 }
 
-pub fn sign_access_token(user_id: &str) -> String {
-  sign_token(user_id, 10 * 60 * 1000)
+pub fn sign_access_token(user_id: &str, config: &Config) -> String {
+  sign_token(user_id, config.access_token_exp, config)
 }
 
-pub fn verify_refresh_token(token: &str) -> Option<String> {
-  let claims = decode::<Claims>(token, &DecodingKey::from_secret("my_secretly_secreted_secret".as_ref()), &Validation::new(Algorithm::HS256)).unwrap().claims;
+pub fn verify_refresh_token(token: &str, config: &Config) -> Option<String> {
+  let claims = decode::<Claims>(token, &DecodingKey::from_secret(config.secret.as_ref()), &Validation::new(Algorithm::HS256)).unwrap().claims;
   Some(claims.user_id.to_owned())
 }

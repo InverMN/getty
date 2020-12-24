@@ -13,13 +13,14 @@ use database::{save_token, used_token};
 use rocket::http::Status;
 use structs::{AuthTokens, RefreshTokenData};
 use aerospike::Client;
-use config::load_config;
+use config::{load_config, Config};
 
 fn main() {
   let config = load_config();
 
   rocket::ignite()
-    .manage(database::connect())
+    .manage(database::connect(&config))
+    .manage(config)
     .mount("/", routes![index])
     .mount("/api/v1/", routes![refresh, logout])
     .launch();
@@ -31,16 +32,16 @@ fn index() -> &'static str {
 }
 
 #[post("/refresh", data="<refresh_token_data>")]
-fn refresh(refresh_token_data: Json<RefreshTokenData>, client: State<Client>) -> Result<Json<AuthTokens>, Status> {
-  if used_token(&client, &refresh_token_data.refresh_token).unwrap() {
+fn refresh(refresh_token_data: Json<RefreshTokenData>, client: State<Client>, config: State<Config>) -> Result<Json<AuthTokens>, Status> {
+  if used_token(&client, &refresh_token_data.refresh_token, &config).unwrap() {
     return Err(Status::Unauthorized);
   }
-  let user_id = verify_refresh_token(&refresh_token_data.refresh_token).unwrap();
+  let user_id = verify_refresh_token(&refresh_token_data.refresh_token, &config).unwrap();
 
-  save_token(&client, &refresh_token_data.refresh_token);
+  save_token(&client, &refresh_token_data.refresh_token, &config);
 
-  let refresh_token = sign_refresh_token(&user_id);
-  let access_token = sign_access_token(&user_id); 
+  let refresh_token = sign_refresh_token(&user_id, &config);
+  let access_token = sign_access_token(&user_id, &config); 
 
   let auth_tokens = AuthTokens {
     refresh_token,
@@ -51,6 +52,6 @@ fn refresh(refresh_token_data: Json<RefreshTokenData>, client: State<Client>) ->
 }
 
 #[post("/logout", data="<refresh_token_data>")]
-fn logout(refresh_token_data: Json<RefreshTokenData>, client: State<Client>) {
-  save_token(&client, &refresh_token_data.refresh_token);
+fn logout(refresh_token_data: Json<RefreshTokenData>, client: State<Client>, config: State<Config>) {
+  save_token(&client, &refresh_token_data.refresh_token, &config);
 }

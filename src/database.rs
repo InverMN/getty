@@ -1,11 +1,14 @@
 extern crate aerospike;
 
+use crate::config;
+
 use aerospike::{Client, ClientPolicy, as_bin, as_key, Expiration, WritePolicy};
 use std::{thread, time};
 use time::{Duration};
+use config::Config;
 
-pub fn connect() -> Client {
-  let host = String::from("localhost:3000");
+pub fn connect(config: &Config) -> Client {
+  let host = String::from(&config.database_host);
   let client: Option<Client>;
 
   let mut first_connect_try = true;
@@ -32,11 +35,11 @@ pub fn connect() -> Client {
   client.unwrap()
 }
 
-pub fn save_token(client: &Client, token: &str) {
+pub fn save_token(client: &Client, token: &str, config: &Config) {
   let mut policy = WritePolicy::default();
   policy.expiration = Expiration::Seconds(60 * 60 * 24 * 11);
 
-  let key = as_key!("test", "tokens", token);
+  let key = as_key!(&config.database_namespace, &config.database_set, token);
   let bins = vec![
     as_bin!("a", ""),
   ];
@@ -47,8 +50,8 @@ pub fn save_token(client: &Client, token: &str) {
   }
 }
 
-pub fn used_token(client: &Client, token: &str) -> aerospike::errors::Result<bool> {
+pub fn used_token(client: &Client, token: &str, config: &Config) -> aerospike::errors::Result<bool> {
   let policy = WritePolicy::default();
-  let key = as_key!("test", "tokens", token);
+  let key = as_key!(&config.database_namespace, &config.database_set, token);
   client.exists(&policy, &key)
 }
