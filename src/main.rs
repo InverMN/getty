@@ -5,11 +5,12 @@ mod database;
 mod json;
 mod tokens;
 
-use regex::Regex;
 use rocket::State;
 use rocket_contrib::json::Json;
-use bcrypt::{hash, verify};
 use tokens::{sign_refresh_token, sign_access_token, verify_refresh_token};
+use database::{save_token, used_token};
+use rocket::http::Status;
+use json::AuthTokens;
 
 fn main() {
   rocket::ignite()
@@ -21,22 +22,30 @@ fn main() {
 
 #[get("/")]
 fn index() -> &'static str {
-  "Welcome to Getty JWT auth server"
+  "JWT auth server"
 }
 
 #[post("/refresh", data="<refresh_token_data>")]
-fn refresh(refresh_token_data: Json<json::RefreshTokenData>) -> Json<json::AuthTokens> {
+fn refresh(refresh_token_data: Json<json::RefreshTokenData>, client: State<aerospike::Client>) -> Result<Json<json::AuthTokens>, Status> {
+  if used_token(&client, &refresh_token_data.refresh_token).unwrap() {
+    return Err(Status::Unauthorized);
+  }
   let user_id = verify_refresh_token(&refresh_token_data.refresh_token).unwrap();
 
+  save_token(&client, &refresh_token_data.refresh_token);
+
   let refresh_token = sign_refresh_token(&user_id);
-  let access_token = sign_access_token(&user_id);
+  let access_token = sign_access_token(&user_id); 
 
-  let auth_tokens = json::AuthTokens { refresh_token, access_token };
+  let auth_tokens = AuthTokens {
+    refresh_token,
+    access_token,
+  };
 
-  Json(auth_tokens)
+  Ok(Json(auth_tokens))
 }
 
 #[post("/logout", data="<refresh_token_data>")]
-fn logout(refresh_token_data: Json<json::RefreshTokenData>) {
-  let refresh_token = &refresh_token_data.refresh_token;
+fn logout(refresh_token_data: Json<json::RefreshTokenData>, client: State<aerospike::Client>) {
+  save_token(&client, &refresh_token_data.refresh_token);
 }
