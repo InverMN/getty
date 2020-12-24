@@ -4,6 +4,7 @@
 mod database;
 mod structs;
 mod tokens;
+mod config;
 
 use rocket::State;
 use rocket_contrib::json::Json;
@@ -12,8 +13,11 @@ use database::{save_token, used_token};
 use rocket::http::Status;
 use structs::{AuthTokens, RefreshTokenData};
 use aerospike::Client;
+use config::load_config;
 
 fn main() {
+  let config = load_config();
+
   rocket::ignite()
     .manage(database::connect())
     .mount("/", routes![index])
