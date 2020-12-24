@@ -6,7 +6,7 @@ use time::{Duration};
 
 pub fn connect() -> Client {
   let host = String::from("localhost:3000");
-  let mut client: Option<Client> = None;
+  let client: Option<Client>;
 
   let mut first_connect_try = true;
   let five_seconds = Duration::from_secs(5);
