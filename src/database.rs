@@ -36,7 +36,7 @@ pub fn connect(config: &Config) -> Client {
 }
 
 pub fn save_token(client: &Client, token: &str, config: &Config) {
-  let policy = WritePolicy { expiration: Expiration::Seconds(60 * 60 * 24 * 11), ..Default::default() };
+  let policy = WritePolicy { expiration: Expiration::Seconds((config.refresh_token_exp / 1000 + 1) as u32), ..Default::default() };
 
   let key = as_key!(&config.database_namespace, &config.database_set, token);
   let bins = vec![
