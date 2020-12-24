@@ -2,7 +2,7 @@
 #[macro_use] extern crate rocket;
 
 mod database;
-mod json;
+mod structs;
 mod tokens;
 
 use rocket::State;
@@ -10,7 +10,8 @@ use rocket_contrib::json::Json;
 use tokens::{sign_refresh_token, sign_access_token, verify_refresh_token};
 use database::{save_token, used_token};
 use rocket::http::Status;
-use json::AuthTokens;
+use structs::{AuthTokens, RefreshTokenData};
+use aerospike::Client;
 
 fn main() {
   rocket::ignite()
@@ -26,7 +27,7 @@ fn index() -> &'static str {
 }
 
 #[post("/refresh", data="<refresh_token_data>")]
-fn refresh(refresh_token_data: Json<json::RefreshTokenData>, client: State<aerospike::Client>) -> Result<Json<json::AuthTokens>, Status> {
+fn refresh(refresh_token_data: Json<RefreshTokenData>, client: State<Client>) -> Result<Json<AuthTokens>, Status> {
   if used_token(&client, &refresh_token_data.refresh_token).unwrap() {
     return Err(Status::Unauthorized);
   }
@@ -46,6 +47,6 @@ fn refresh(refresh_token_data: Json<json::RefreshTokenData>, client: State<aeros
 }
 
 #[post("/logout", data="<refresh_token_data>")]
-fn logout(refresh_token_data: Json<json::RefreshTokenData>, client: State<aerospike::Client>) {
+fn logout(refresh_token_data: Json<RefreshTokenData>, client: State<Client>) {
   save_token(&client, &refresh_token_data.refresh_token);
 }
