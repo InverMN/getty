@@ -15,18 +15,18 @@ pub fn connect(config: &Config) -> Client {
   let five_seconds = Duration::from_secs(5);
 
   loop {
-    let connection_result = Client::new(&ClientPolicy::default(), &host);
-
-    if connection_result.is_ok() {
-      client = Some(connection_result.unwrap());
-      break;
+    match Client::new(&ClientPolicy::default(), &host) {
+      Ok(value) => {
+        client = Some(value);
+        break;
+      },
+      Err(_) => {
+        if first_connect_try {
+          first_connect_try = false;
+          println!("Failed to connect to Aerospike database at host \"{}\", retrying continuously...", &host);
+        }
+      },
     }
-
-    if first_connect_try {
-      first_connect_try = false;
-      println!("Failed to connect to Aerospike database at host \"{}\", retrying continuously...", &host);
-    }
-
     thread::sleep(five_seconds);
   }
 
