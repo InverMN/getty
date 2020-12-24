@@ -41,7 +41,10 @@ pub fn save_token(client: &Client, token: &str) {
     as_bin!("a", ""),
   ];
 
-  client.put(&policy, &key, &bins);
+  let writing_result =  client.put(&policy, &key, &bins);
+  if writing_result.is_err() {
+    panic!("Error writing refresh token to database... \n{}", writing_result.unwrap_err());
+  }
 }
 
 pub fn used_token(client: &Client, token: &str) -> aerospike::errors::Result<bool> {
