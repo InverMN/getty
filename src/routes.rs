@@ -22,7 +22,10 @@ pub fn refresh(refresh_token_data: Json<RefreshTokenData>, client: State<Client>
   if used_token(&client, &refresh_token_data.refresh_token, &config).unwrap() {
     return Err(Status::Unauthorized);
   }
-  let user_id = verify_refresh_token(&refresh_token_data.refresh_token, &config).unwrap();
+  let user_id = match verify_refresh_token(&refresh_token_data.refresh_token, &config) {
+    Some(value) => value,
+    None => return Err(Status::Unauthorized),
+  };
 
   save_token(&client, &refresh_token_data.refresh_token, &config);
 

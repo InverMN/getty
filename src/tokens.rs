@@ -37,6 +37,8 @@ pub fn sign_access_token(user_id: &str, config: &Config) -> String {
 }
 
 pub fn verify_refresh_token(token: &str, config: &Config) -> Option<String> {
-  let claims = decode::<Claims>(token, &DecodingKey::from_secret(config.secret.as_ref()), &Validation::new(Algorithm::HS256)).unwrap().claims;
-  Some(claims.user_id)
+  match decode::<Claims>(token, &DecodingKey::from_secret(config.secret.as_ref()), &Validation::new(Algorithm::HS256)) {
+    Ok(value) => Some(value.claims.user_id),
+    Err(error) => None,
+  }
 }
