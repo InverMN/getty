@@ -52,6 +52,7 @@ fn refresh(refresh_token_data: Json<RefreshTokenData>, client: State<Client>, co
 }
 
 #[post("/logout", data="<refresh_token_data>")]
-fn logout(refresh_token_data: Json<RefreshTokenData>, client: State<Client>, config: State<Config>) {
+fn logout(refresh_token_data: Json<RefreshTokenData>, client: State<Client>, config: State<Config>) -> Status {
   save_token(&client, &refresh_token_data.refresh_token, &config);
+  Status::Ok
 }
