@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use prometheus::{HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGauge, Opts, Registry};
+use prometheus::{IntCounter, IntCounterVec, Opts, Registry};
 
 lazy_static! {
   pub static ref REGISTRY: Registry = Registry::new();
